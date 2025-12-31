@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "Mobile_Movie_App",
+    "name": "MovieSlack",
     "slug": "Mobile_Movie_App",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "mobilemovieapp",
+    "scheme": "movies",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
