@@ -17,7 +17,7 @@ const Index = () => {
     loading: moviesLoading,
     error: moviesError 
   } = useFetch(() => fetchMovies({
-    query: ''
+    query: 'demon'
   }));
 
   return (
