@@ -17,12 +17,16 @@ export const fetchMovies = async ({query}: {query: string}) => {
     }
   );
   
+  console.log("API Response Status:", response.status);
+
     if(!response.ok) {
+      console.error("API Error Response:", response.statusText);
       //@ts-ignore
       throw new Error("Failed to fetch movies!", response.statusText);
     }
 
     const data = await response.json();
+    console.log("Movies found:", data.results?.length);
     
     return data.results;
   }
