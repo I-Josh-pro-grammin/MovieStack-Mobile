@@ -16,7 +16,7 @@ const TrendingCard = ({item: {movie_id, title, poster_url}, index}: Props) => {
       <TouchableOpacity className='w-32 relative pl-5'>
         <Image source={{uri: poster_url}} className='w-32 h-48 rounded-lg' resizeMode='cover' />
 
-        <View className='absolute bottom-9 -left-2.5 px-2 py-1 rounded-full'>
+        <View className='absolute bottom-3 -left-2.5 px-2 py-1 rounded-full'>
           <MaskedView maskElement={
             <Text className='text-white text-6xl font-bold'>{index + 1}</Text>}>
             <Image source={images.rankingGradient} className='size-14' resizeMode='cover' />

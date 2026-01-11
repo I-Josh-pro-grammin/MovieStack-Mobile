@@ -43,7 +43,7 @@ const Index = () => {
       />
 
       <ScrollView
-        className="flex-1 px-5"
+        className="flex-1"
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ minHeight: "100%", paddingBottom: 10 }}
       >
@@ -59,18 +59,22 @@ const Index = () => {
           <Text>Error: {moviesError?.message || trendingError?.message}</Text>
         ) : (
           <View className="flex-1 mt-5">
-            <SearchBar
-              onPress={() => {
-                router.push("/search");
-              }}
-              placeholder="Search for a movie"
-            />
+            <View className="px-5">
+              <SearchBar
+                onPress={() => {
+                  router.push("/search");
+                }}
+                placeholder="Search for a movie"
+              />
+            </View>
 
             {trendingMovies && (
               <View className="mt-10">
-                <Text className="text-lg text-white font-bold mb-3">
-                  Trending Movies
-                </Text>
+                <View className="px-5">
+                  <Text className="text-lg text-white font-bold mb-3">
+                    Trending Movies
+                  </Text>
+                </View>
                 <FlatList
                   horizontal
                   showsHorizontalScrollIndicator={false}
@@ -78,6 +82,7 @@ const Index = () => {
                   data={trendingMovies}
                   contentContainerStyle={{
                     gap: 26,
+                    paddingHorizontal: 20,
                   }}
                   renderItem={({ item, index }) => (
                     <TrendingCard item={item} index={index} />
@@ -88,7 +93,7 @@ const Index = () => {
               </View>
             )}
 
-            <>
+            <View className="px-5">
               <Text className="text-lg text-white font-bold mt-5 mb-3">
                 Latest Movies
               </Text>
@@ -107,7 +112,7 @@ const Index = () => {
                 className="mt-2 pb-32"
                 scrollEnabled={false}
               />
-            </>
+            </View>
           </View>
         )}
       </ScrollView>

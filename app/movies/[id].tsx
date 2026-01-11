@@ -24,8 +24,6 @@ const MovieDetails = () => {
   const router = useRouter();
 
   const { data: movie, loading } = useFetch(() => fetchMovieDetails(id as string) )
-
-  console.log(movie);
   
   return (
     <View className='bg-primary flex-1'>
@@ -52,8 +50,16 @@ const MovieDetails = () => {
           <MovieInfo label='Genre' value={movie?.genres?.map(g => g.name).join(' - ') || 'N/A'} />
 
           <View className='flex flex-row justify-between w-1/2'>
-            <MovieInfo label='Budget' value={`$${movie?.budget / 1000000} millions` || 'N/A'}/>
-            <MovieInfo label='Revenue' value={`$${movie?.revenue / 1000000} millions` || 'N/A'}/>
+            {
+              movie?.budget ? (
+                <MovieInfo label='Budget' value={`$${movie?.budget / 1000000} millions`}/>
+              ) : <></>
+            }
+            {
+              movie?.revenue ? (
+                <MovieInfo label='Revenue' value={`$${movie?.revenue / 1000000} millions`}/>
+              ) : <></>
+            }
           </View>
 
           <MovieInfo label='Product Companies' value={movie?.production_companies?.map(g => g.name).join(' - ') || 'N/A'} />
