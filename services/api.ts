@@ -17,7 +17,6 @@ export const fetchMovies = async ({query}: {query: string}) => {
     }
   );
   
-  console.log("API Response Status:", response.status);
 
     if(!response.ok) {
       console.error("API Error Response:", response.statusText);
@@ -26,9 +25,35 @@ export const fetchMovies = async ({query}: {query: string}) => {
     }
 
     const data = await response.json();
-    console.log("Movies found:", data.results?.length);
     
     return data.results;
+  }
+
+  export const fetchMovieDetails = async (movie_id: string): Promise<MovieDetails> => {
+    const endpoint = `${TMDB_CONFIG.BASE_URL}/movie/${movie_id}`;
+
+    try {
+      const response = await fetch(endpoint, 
+      {
+        method: 'GET',
+        headers: TMDB_CONFIG.headers
+      }
+    );
+
+
+    if(!response.ok) {
+      console.error("API Error Response:", response.statusText);
+      //@ts-ignore
+      throw new Error("Failed to fetch movie details!", response.statusText);
+    }
+
+    const data = await response.json();
+    
+    return data;
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
   }
 
   // const url = 'https://api.themoviedb.org/3/discover/movie?include_adult=false&include_video=false&language=en-US&page=1&sort_by=popularity.desc';

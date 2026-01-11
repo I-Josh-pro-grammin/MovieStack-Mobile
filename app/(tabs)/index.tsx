@@ -58,13 +58,11 @@ const Index = () => {
                 trendingMovies && (
                   <View className='w-full'>
                     <FlatList
-                      bounces={false}
                       className='mb-4 mt-3'
                       data={trendingMovies}
                       renderItem={({ item, index }) => (
                         <TrendingCard item={item} index={index} />
                       )}
-                      showsHorizontalScrollIndicator={false}
                       ItemSeparatorComponent={() => <View className='w-5' />}
                       keyExtractor={(item: TrendingMovie) => (item.movie_id.toString())}
                       contentContainerStyle={{
@@ -93,7 +91,6 @@ const Index = () => {
                     gap: 20,
                     paddingRight: 5,
                     marginBottom: 10,
-
                   }}
                   className='mt-2 pb-32'
                   scrollEnabled={false}

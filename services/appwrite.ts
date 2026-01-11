@@ -11,21 +11,21 @@ const client = new Client()
 const database = new Databases(client);
 
 export const updateSearchCount = async (query: string, movie: Movie) => {
-  
+
   try {
     const res = await database.listDocuments(DATABASE_ID, COLLECTION_ID, [
       Query.equal('searchTerm', query)
     ])
     //check if a record of that search has already been stored
-    
+
     //if a document is found increment the searchCount field
     if (res.documents.length > 0) {
       const searchDoc = res.documents[0];
-      
+
       await database.updateDocument(
         DATABASE_ID, COLLECTION_ID, searchDoc.$id, {
-          count: searchDoc.count + 1
-        }
+        count: searchDoc.count + 1
+      }
       )
     } else {
       //if no document is found create a new document in Appwrite database -> searchCount = 1
@@ -47,7 +47,7 @@ export const getTrendingMovies = async (): Promise<TrendingMovie[]> => {
   try {
     const res = await database.listDocuments(DATABASE_ID, COLLECTION_ID, [
       Query.limit(5),
-      Query.orderAsc('count')
+      Query.orderDesc('count')
     ])
 
     return res.documents as unknown as TrendingMovie[];
