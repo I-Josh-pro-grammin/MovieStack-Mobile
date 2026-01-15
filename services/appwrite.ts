@@ -1,35 +1,32 @@
-import { Client, Databases, ID, Query } from 'react-native-appwrite';
+import { Account, Client, Databases, ID, Query } from 'react-native-appwrite';
 // track the searches made by the user
 
 const DATABASE_ID = process.env.EXPO_PUBLIC_APPWRITE_DATABASE_ID!;
 const COLLECTION_ID = process.env.EXPO_PUBLIC_APPWRITE_COLLECTION_ID!;
+const SAVES_COLLECTION_ID = process.env.EXPO_PUBLIC_APPWRITE_SAVES_ID!;
 
 const client = new Client()
   .setEndpoint(process.env.EXPO_PUBLIC_APPWRITE_ENDPOINT!)
   .setProject(process.env.EXPO_PUBLIC_APPWRITE_PROJECT_ID!)
 
 const database = new Databases(client);
+const account = new Account(client);
 
 export const updateSearchCount = async (query: string, movie: Movie) => {
-
   try {
     const res = await database.listDocuments(DATABASE_ID, COLLECTION_ID, [
       Query.equal('searchTerm', query)
     ])
-    //check if a record of that search has already been stored
 
-    //if a document is found increment the searchCount field
     if (res.documents.length > 0) {
       const searchDoc = res.documents[0];
-
       await database.updateDocument(
         DATABASE_ID, COLLECTION_ID, searchDoc.$id, {
         count: searchDoc.count + 1
       }
       )
     } else {
-      //if no document is found create a new document in Appwrite database -> searchCount = 1
-      database.createDocument(DATABASE_ID, COLLECTION_ID, ID.unique(), {
+      await database.createDocument(DATABASE_ID, COLLECTION_ID, ID.unique(), {
         searchTerm: query,
         movie_id: movie.id,
         count: 1,
@@ -54,5 +51,56 @@ export const getTrendingMovies = async (): Promise<TrendingMovie[]> => {
   } catch (error) {
     console.log(error);
     throw error;
+  }
+}
+
+export const createUser = async (email: string, username: string, password: string) => {
+  try {
+    const user = await account.create(
+      ID.unique(),
+      email,
+      password,
+      username
+    );
+
+    // After creating the account, we automatically log them in
+    await loginUser(email, password);
+
+    return user;
+  } catch (error) {
+    console.log(error);
+    throw error;
+  }
+}
+
+export const loginUser = async (email: string, password: string) => {
+  try {
+    // Check if a session already exists to avoid conflict
+    try {
+      await account.deleteSession('current');
+    } catch { }
+
+    const session = await account.createEmailPasswordSession(email, password);
+    return session;
+  } catch (error) {
+    console.log(error);
+    throw error;
+  }
+}
+
+export const logoutUser = async () => {
+  try {
+    await account.deleteSession('current');
+  } catch (error) {
+    console.log(error);
+    throw error;
+  }
+}
+
+export const getCurrentUser = async () => {
+  try {
+    return await account.get();
+  } catch (error) {
+    return null;
   }
 }
