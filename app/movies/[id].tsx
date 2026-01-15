@@ -1,5 +1,6 @@
 import { icons } from '@/React Native Movie App (assets)/constants/icons';
 import { fetchMovieDetails } from '@/services/api';
+import { isMovieSaved as appwriteCheckSaved, saveMovie as appwriteSave, unsaveMovie as appwriteUnsave } from '@/services/appwrite';
 import { ActiveDownload, isMovieDownloaded, startDownload, subscribeToDownloads } from '@/services/download';
 import useFetch from '@/services/useFetch';
 import { Ionicons } from '@expo/vector-icons';
@@ -27,13 +28,25 @@ const MovieDetails = () => {
   const [downloading, setDownloading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [downloaded, setDownloaded] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
+  const [savedDocId, setSavedDocId] = useState<string | null>(null);
+  const [togglingSave, setTogglingSave] = useState(false);
 
   const { data: movie, loading } = useFetch(() => fetchMovieDetails(id as string))
 
   useEffect(() => {
-    if (movie) {
-      setDownloaded(isMovieDownloaded(movie.id.toString()));
-    }
+    const checkStatus = async () => {
+      if (movie) {
+        setDownloaded(isMovieDownloaded(movie.id.toString()));
+        const savedDoc = await appwriteCheckSaved(movie.id.toString());
+        if (savedDoc) {
+          setIsSaved(true);
+          setSavedDocId(savedDoc.$id);
+        }
+      }
+    };
+
+    checkStatus();
 
     // Subscribe to global progress to stay in sync
     const unsubscribe = subscribeToDownloads((active: ActiveDownload[]) => {
@@ -61,7 +74,7 @@ const MovieDetails = () => {
 
     setDownloading(true);
     try {
-      await startDownload(movie, (p) => setProgress(p));
+      await startDownload(movie, (p: number) => setProgress(p));
       setDownloaded(true);
       Alert.alert('Success', 'Movie downloaded successfully!');
     } catch (error) {
@@ -70,6 +83,28 @@ const MovieDetails = () => {
     } finally {
       setDownloading(false);
       setProgress(0);
+    }
+  };
+
+  const handleSaveToggle = async () => {
+    if (!movie) return;
+    setTogglingSave(true);
+    try {
+      if (isSaved && savedDocId) {
+        await appwriteUnsave(savedDocId);
+        setIsSaved(false);
+        setSavedDocId(null);
+      } else {
+        const res = await appwriteSave(movie);
+        setIsSaved(true);
+        setSavedDocId(res.$id);
+        Alert.alert('Success', 'Movie saved to your library!');
+      }
+    } catch (error) {
+      console.error('Save toggle error:', error);
+      Alert.alert('Error', 'Failed to update saved status.');
+    } finally {
+      setTogglingSave(false);
     }
   };
 
@@ -87,24 +122,42 @@ const MovieDetails = () => {
               <Text className='text-white text-xl font-bold'>{movie?.title}</Text>
             </View>
 
-            <TouchableOpacity
-              onPress={handleDownload}
-              disabled={downloading}
-              className={`p-3 rounded-full ${downloaded ? 'bg-green-500/20' : 'bg-accent/20'}`}
-            >
-              {downloading ? (
-                <View className='items-center justify-center'>
-                  <ActivityIndicator size="small" color="#fff" />
-                  <Text className='text-white text-[8px] mt-1'>{Math.round(progress * 100)}%</Text>
-                </View>
-              ) : (
-                <Ionicons
-                  name={downloaded ? "checkmark-circle" : "download-outline"}
-                  size={24}
-                  color={downloaded ? "#22c55e" : "#eb8c33"}
-                />
-              )}
-            </TouchableOpacity>
+            <View className='flex-row gap-x-4 items-center'>
+              <TouchableOpacity
+                onPress={handleSaveToggle}
+                disabled={togglingSave}
+                className={`p-3 rounded-full ${isSaved ? 'bg-accent/20' : 'bg-dark-100'}`}
+              >
+                {togglingSave ? (
+                  <ActivityIndicator size="small" color="#eb8c33" />
+                ) : (
+                  <Ionicons
+                    name={isSaved ? "bookmark" : "bookmark-outline"}
+                    size={24}
+                    color="#eb8c33"
+                  />
+                )}
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={handleDownload}
+                disabled={downloading}
+                className={`p-3 rounded-full ${downloaded ? 'bg-green-500/20' : 'bg-accent/20'}`}
+              >
+                {downloading ? (
+                  <View className='items-center justify-center'>
+                    <ActivityIndicator size="small" color="#fff" />
+                    <Text className='text-white text-[8px] mt-1'>{Math.round(progress * 100)}%</Text>
+                  </View>
+                ) : (
+                  <Ionicons
+                    name={downloaded ? "checkmark-circle" : "download-outline"}
+                    size={24}
+                    color={downloaded ? "#22c55e" : "#eb8c33"}
+                  />
+                )}
+              </TouchableOpacity>
+            </View>
           </View>
 
           <View className='flex-row items-center gap-x-1 mt-2 '>

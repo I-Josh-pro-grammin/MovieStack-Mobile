@@ -104,3 +104,65 @@ export const getCurrentUser = async () => {
     return null;
   }
 }
+
+export const saveMovie = async (movie: MovieDetails) => {
+  try {
+    const user = await getCurrentUser();
+    if (!user) throw new Error('User not authenticated');
+
+    return await database.createDocument(DATABASE_ID, SAVES_COLLECTION_ID, ID.unique(), {
+      userId: user.$id,
+      movieId: movie.id.toString(),
+      title: movie.title,
+      poster_path: movie.poster_path,
+      vote_average: movie.vote_average,
+      release_date: movie.release_date
+    });
+  } catch (error) {
+    console.error('Error saving movie:', error);
+    throw error;
+  }
+}
+
+export const unsaveMovie = async (documentId: string) => {
+  try {
+    return await database.deleteDocument(DATABASE_ID, SAVES_COLLECTION_ID, documentId);
+  } catch (error) {
+    console.error('Error unsaving movie:', error);
+    throw error;
+  }
+}
+
+export const getSavedMovies = async () => {
+  try {
+    const user = await getCurrentUser();
+    if (!user) return [];
+
+    const res = await database.listDocuments(DATABASE_ID, SAVES_COLLECTION_ID, [
+      Query.equal('userId', user.$id),
+      Query.orderDesc('$createdAt')
+    ]);
+
+    return res.documents;
+  } catch (error) {
+    console.error('Error getting saved movies:', error);
+    return [];
+  }
+}
+
+export const isMovieSaved = async (movieId: string) => {
+  try {
+    const user = await getCurrentUser();
+    if (!user) return null;
+
+    const res = await database.listDocuments(DATABASE_ID, SAVES_COLLECTION_ID, [
+      Query.equal('userId', user.$id),
+      Query.equal('movieId', movieId.toString())
+    ]);
+
+    return res.documents.length > 0 ? res.documents[0] : null;
+  } catch (error) {
+    console.error('Error checking if movie is saved:', error);
+    return null;
+  }
+}
