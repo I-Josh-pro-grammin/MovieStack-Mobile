@@ -2,6 +2,7 @@ import { loginUser } from '@/services/appwrite'
 import { useRouter } from 'expo-router'
 import React, { useState } from 'react'
 import { ActivityIndicator, Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native'
+import { AppwriteException } from 'react-native-appwrite';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -22,17 +23,22 @@ const Login = () => {
       return;
     }
 
-    if (password.length < 6) {
-      Alert.alert('Error', 'Password must be at least 6 characters long');
-      return;
-    }
+    // if (password.length < 6) {
+    //   Alert.alert('Error', 'Password must be at least 6 characters long');
+    //   return;
+    // }
 
     setLoading(true);
     try {
       await loginUser(email, password);
       router.push('/(tabs)');
     } catch (error: any) {
+      if(error instanceof AppwriteException) {
+        Alert.alert('Login Error',  'Invalid credentials');
+      }else {
       Alert.alert('Login Error', error.message || 'Invalid credentials');
+
+      }
     } finally {
       setLoading(false);
     }

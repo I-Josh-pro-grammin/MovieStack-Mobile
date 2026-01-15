@@ -1,8 +1,14 @@
+import { initDB } from "@/services/download";
 import { Stack } from "expo-router";
-import './globals.css';
+import { useEffect } from "react";
 import { StatusBar } from "react-native";
+import './globals.css';
 
 export default function RootLayout() {
+  useEffect(() => {
+    initDB();
+  }, []);
+
   return <>
     <StatusBar hidden={true} />
     <Stack>
@@ -10,6 +16,6 @@ export default function RootLayout() {
       <Stack.Screen name="movies/[id]" options={{ headerShown: false }} />
       <Stack.Screen name="(auth)" options={{ headerShown: false }} />
       <Stack.Screen name="settings" options={{ headerShown: false }} />
-  </Stack>
+    </Stack>
   </>;
 }
