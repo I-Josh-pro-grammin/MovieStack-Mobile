@@ -12,7 +12,7 @@ const _layout = () => {
         headerShown: false,
       }}
     >
-      <Tabs.Screen name="index" />
+      <Tabs.Screen name="signup" />
       <Tabs.Screen name="login" />
     </Tabs>
   )

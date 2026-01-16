@@ -4,6 +4,10 @@ import { useEffect } from "react";
 import { StatusBar } from "react-native";
 import './globals.css';
 
+export const unstable_settings = {
+  initialRouteName: "(tabs)",
+};
+
 export default function RootLayout() {
   useEffect(() => {
     initDB();
