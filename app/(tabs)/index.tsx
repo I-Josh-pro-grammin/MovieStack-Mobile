@@ -87,7 +87,7 @@ const Index = () => {
                   renderItem={({ item, index }) => (
                     <TrendingCard item={item} index={index} />
                   )}
-                  keyExtractor={(item) => item.movie_id.toString()}
+                  keyExtractor={(item, id) => id.toString()}
                   ItemSeparatorComponent={() => <View className="w-4" />}
                 />
               </View>

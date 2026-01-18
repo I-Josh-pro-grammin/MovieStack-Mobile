@@ -1,7 +1,9 @@
 import { icons } from '@/React Native Movie App (assets)/constants/icons';
+import MoviePlayer from '@/components/MoviePlayer';
+import VideoPlayer from '@/components/VideoPlayer';
 import { fetchMovieDetails } from '@/services/api';
-import { isMovieSaved as appwriteCheckSaved, saveMovie as appwriteSave, unsaveMovie as appwriteUnsave } from '@/services/appwrite';
-import { ActiveDownload, isMovieDownloaded, startDownload, subscribeToDownloads } from '@/services/download';
+import { isMovieSaved as appwriteCheckSaved, saveMovie as appwriteSave, unsaveMovie as appwriteUnsave, getCurrentUser } from '@/services/appwrite';
+import { ActiveDownload, getDownloadedMovie, isMovieDownloaded, startDownload, subscribeToDownloads } from '@/services/download';
 import useFetch from '@/services/useFetch';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -31,6 +33,8 @@ const MovieDetails = () => {
   const [isSaved, setIsSaved] = useState(false);
   const [savedDocId, setSavedDocId] = useState<string | null>(null);
   const [togglingSave, setTogglingSave] = useState(false);
+  const [playingVideo, setPlayingVideo] = useState<{ uri: string; title: string } | null>(null);
+  const [isStreaming, setIsStreaming] = useState(false);
 
   const { data: movie, loading } = useFetch(() => fetchMovieDetails(id as string))
 
@@ -68,12 +72,14 @@ const MovieDetails = () => {
 
   const handleDownload = async () => {
     if (downloaded) {
-      Alert.alert('Already Downloaded', 'This movie is already in your downloads.');
+      // If downloaded, play instead
+      handlePlay();
       return;
     }
 
     setDownloading(true);
     try {
+      console.log('Download started for movie:', movie);
       await startDownload(movie, (p: number) => setProgress(p));
       setDownloaded(true);
       Alert.alert('Success', 'Movie downloaded successfully!');
@@ -86,10 +92,28 @@ const MovieDetails = () => {
     }
   };
 
+  const handlePlay = () => {
+    const downloadedMovie = getDownloadedMovie(id as string);
+    if (downloadedMovie) {
+      setPlayingVideo({ uri: downloadedMovie.local_uri, title: downloadedMovie.title });
+    } else {
+      Alert.alert('Error', 'Could not find downloaded movie file.');
+    }
+  };
+
   const handleSaveToggle = async () => {
     if (!movie) return;
     setTogglingSave(true);
     try {
+      const user = await getCurrentUser();
+      if (!user) {
+        Alert.alert('Login Required', 'Please login to save movies to your library.', [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Login', onPress: () => router.push('/(auth)/login') }
+        ]);
+        return;
+      }
+
       if (isSaved && savedDocId) {
         await appwriteUnsave(savedDocId);
         setIsSaved(false);
@@ -97,7 +121,9 @@ const MovieDetails = () => {
       } else {
         const res = await appwriteSave(movie);
         setIsSaved(true);
-        setSavedDocId(res.$id);
+        if (res) {
+          setSavedDocId(res.$id);
+        }
         Alert.alert('Success', 'Movie saved to your library!');
       }
     } catch (error) {
@@ -108,13 +134,21 @@ const MovieDetails = () => {
     }
   };
 
+  if (loading) {
+    return (
+      <View className="flex-1 bg-primary justify-center items-center">
+        <ActivityIndicator size="large" color="#eb8c33" />
+      </View>
+    );
+  }
+
   return (
     <View className='bg-primary flex-1'>
       <ScrollView contentContainerStyle={{
-        paddingBottom: 150
+        paddingBottom: 250
       }}>
         <View>
-          <Image source={{ uri: `https://image.tmdb.org/t/p/w500/${movie?.poster_path}` }} className='w-full h-[550px]' resizeMode='stretch' />
+          <Image source={{ uri: movie?.poster_path ? `https://image.tmdb.org/t/p/w500/${movie?.poster_path}` : 'https://placehold.co/600x400/303030/ffffff.png' }} className='w-full h-[550px]' resizeMode='stretch' />
         </View>
         <View className='flex-col items-start justify-center mt-5 px-5'>
           <View className='flex-row justify-between items-center w-full'>
@@ -151,7 +185,7 @@ const MovieDetails = () => {
                   </View>
                 ) : (
                   <Ionicons
-                    name={downloaded ? "checkmark-circle" : "download-outline"}
+                    name={downloaded ? "play-circle" : "download-outline"}
                     size={24}
                     color={downloaded ? "#22c55e" : "#eb8c33"}
                   />
@@ -172,29 +206,58 @@ const MovieDetails = () => {
           </View>
 
           <MovieInfo label='Overview' value={movie?.overview} />
-          <MovieInfo label='Genre' value={movie?.genres?.map(g => g.name).join(' - ') || 'N/A'} />
+          <MovieInfo label='Genre' value={movie?.genres?.map((g: any) => g.name).join(' - ') || 'N/A'} />
 
-          <View className='flex flex-row justify-between w-1/2'>
+          <View className='flex flex-row justify-between w-full'>
             {
               movie?.budget ? (
-                <MovieInfo label='Budget' value={`$${movie?.budget / 1000000} millions`} />
-              ) : <></>
+                <MovieInfo label='Budget' value={`$${Math.round(movie?.budget / 1000000)}M`} />
+              ) : null
             }
             {
               movie?.revenue ? (
-                <MovieInfo label='Revenue' value={`$${movie?.revenue / 1000000} millions`} />
-              ) : <></>
+                <MovieInfo label='Revenue' value={`$${Math.round(movie?.revenue / 1000000)}M`} />
+              ) : null
             }
           </View>
 
-          <MovieInfo label='Product Companies' value={movie?.production_companies?.map(g => g.name).join(' - ') || 'N/A'} />
+          <MovieInfo label='Production Companies' value={movie?.production_companies?.map((g: any) => g.name).join(' - ') || 'N/A'} />
         </View>
       </ScrollView>
 
-      <TouchableOpacity className='absolute bottom-5  left-0 right-0 mx-5 bg-accent rounded-lg py-3.5 flex flex-row items-center justify-center z-50' onPress={router.back}>
-        <Image source={icons.arrow} className='size-5 rotate-180' tintColor='white' />
-        <Text className='text-white text-sm font-bold'>Go Back</Text>
-      </TouchableOpacity>
+      <View className='absolute bottom-10 bg-opacity-20 left-0 right-0 p-5 bg-primary/95 border-t border-dark-100 flex-col gap-y-3'>
+        <TouchableOpacity
+          className='bg-accent rounded-lg py-4 flex flex-row items-center justify-center'
+          onPress={() => setIsStreaming(true)}
+        >
+          <Ionicons name="play" size={20} color="white" />
+          <Text className='text-white text-base font-bold ml-2'>Watch Now</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          className='bg-dark-100 rounded-lg py-3 flex flex-row items-center justify-center'
+          onPress={() => router.back()}
+        >
+          <Image source={icons.arrow} className='size-4 rotate-180' tintColor='gray' />
+          <Text className='text-gray-400 text-sm font-medium ml-2'>Go Back</Text>
+        </TouchableOpacity>
+      </View>
+
+      {playingVideo && (
+        <VideoPlayer
+          uri={playingVideo.uri}
+          title={playingVideo.title}
+          onClose={() => setPlayingVideo(null)}
+        />
+      )}
+
+      {isStreaming && movie && (
+        <MoviePlayer
+          tmdbId={movie.id.toString()}
+          title={movie.title}
+          onClose={() => setIsStreaming(false)}
+        />
+      )}
     </View>
   )
 }

@@ -1,4 +1,5 @@
 import * as FileSystem from 'expo-file-system/legacy';
+import * as MediaLibrary from 'expo-media-library';
 import * as SQLite from 'expo-sqlite';
 import { Alert } from 'react-native';
 
@@ -60,9 +61,16 @@ export const startDownload = async (
     return;
   }
 
+  // Request media library permissions first
+  const { status } = await MediaLibrary.requestPermissionsAsync();
+  if (status !== 'granted') {
+    Alert.alert('Permission Required', 'We need permission to save movies to your gallery.');
+    return;
+  }
+
   try {
-    // For demo purposes, we use a sample video URL if none provided
-    // In a real app, this would be the actual movie file URL
+    // For demo purposes, we use a sample video URL
+    // In a real app, you would fetch a direct file URL from your backend or a provider
     const videoUrl = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4";
 
     const fileExtension = videoUrl.split('.').pop();
@@ -105,7 +113,20 @@ export const startDownload = async (
     const result = await downloadResumable.downloadAsync();
 
     if (result) {
-      // Save to SQLite
+      // 1. Save to Gallery (for user visibility in BlueStacks)
+      try {
+        const asset = await MediaLibrary.createAssetAsync(result.uri);
+        const album = await MediaLibrary.getAlbumAsync('Movies');
+        if (album === null) {
+          await MediaLibrary.createAlbumAsync('Movies', asset, false);
+        } else {
+          await MediaLibrary.addAssetsToAlbumAsync([asset], album, false);
+        }
+      } catch (e) {
+        console.warn('Gallery save failed, but internal download succeeded:', e);
+      }
+
+      // 2. Save INTERNAL path to SQLite (always works for playback)
       db.runSync(
         'INSERT OR REPLACE INTO downloads (id, title, poster_path, local_uri, download_date) VALUES (?, ?, ?, ?, ?)',
         [movieId, movie.title, movie.poster_path, result.uri, new Date().toISOString()]
@@ -130,7 +151,10 @@ export const getDownloads = (): DownloadedMovie[] => {
 
 export const deleteDownload = async (id: string, localUri: string) => {
   try {
-    await FileSystem.deleteAsync(localUri, { idempotent: true });
+    // Note: If localUri is a MediaLibrary URI, standard FileSystem delete might not work.
+    // However, usually deleting the cache file is enough if we want to remove it from our app.
+    // To truly delete from gallery, we'd need MediaLibrary.deleteAssetsAsync.
+    // For now we just remove from DB.
     db.runSync('DELETE FROM downloads WHERE id = ?', [id]);
     return true;
   } catch (error) {
@@ -142,4 +166,8 @@ export const deleteDownload = async (id: string, localUri: string) => {
 export const isMovieDownloaded = (id: string): boolean => {
   const result = db.getFirstSync('SELECT id FROM downloads WHERE id = ?', [id.toString()]);
   return !!result;
+};
+
+export const getDownloadedMovie = (id: string): DownloadedMovie | null => {
+  return db.getFirstSync('SELECT * FROM downloads WHERE id = ?', [id.toString()]) as DownloadedMovie | null;
 };

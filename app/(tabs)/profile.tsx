@@ -3,7 +3,7 @@ import { getCurrentUser, logoutUser } from '@/services/appwrite'
 import { Ionicons } from '@expo/vector-icons'
 import { useRouter } from 'expo-router'
 import React, { useEffect, useState } from 'react'
-import { ActivityIndicator, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
+import { ActivityIndicator, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 
 const Profile = () => {
   const router = useRouter();
@@ -47,21 +47,25 @@ const Profile = () => {
   }
 
   return (
-    <View className='flex-1 flex-col gap-10 bg-primary px-10'>
-      <View className='flex  mt-[10rem] mx-[2rem] justify-center gap-5'>
+    <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ minHeight: "100%", paddingBottom: 10 }} 
+        className='flex-1 flex-col gap-10 bg-primary px-10'>
+      <View
+        className='flex mt-[10rem] mx-[2rem] justify-center gap-5'>
         <View className='flex items-center mx-[2rem] flex-col gap-5'>
           <Image source={icons.person} className='size-10 rounded-full' />
           <Text className='text-white text-2xl font-bold'>Profile</Text>
         </View>
-        <View className='flex mt-[4rem] mx-[2rem] flex-row justify-between items-center'>
+        <View className='flex mt-[4rem] flex-row justify-between items-center'>
           <Text className='text-white'>Username :</Text>
           <Text className='text-white'>{user?.name || 'N/A'}</Text>
         </View>
-        <View className='flex mx-[2rem] flex-row justify-between items-center'>
+        <View className='flex flex-row justify-between items-center'>
           <Text className='text-white'>Email :</Text>
           <Text className='text-white'>{user?.email || 'N/A'}</Text>
         </View>
-        <View className='flex mx-[2rem] flex-row justify-between items-center'>
+        <View className='flex flex-row justify-between items-center'>
           <Text className='text-white'>Password :</Text>
           <Text className='text-white'>********</Text>
           <TouchableOpacity onPress={() => router.push('/(auth)/login')} className='flex bg-accent flex-row gap-3 items-center px-10 py-3 rounded-lg'>
@@ -84,11 +88,11 @@ const Profile = () => {
           </TouchableOpacity>
         </View>
       </View>
-      <TouchableOpacity onPress={() => router.back()} className='flex bg-accent flex-row gap-3 absolute top-5 left-5 items-center px-10 py-3 rounded-lg'>
+      <TouchableOpacity onPress={() => router.back()} className='flex bg-accent flex-row gap-3 absolute top-10 left-5 items-center px-10 py-3 rounded-lg'>
         <Ionicons name="arrow-back" size={24} color="white" />
         <Text className='text-white'>Back</Text>
       </TouchableOpacity>
-    </View>
+    </ScrollView>
   )
 }
 

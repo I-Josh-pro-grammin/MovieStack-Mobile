@@ -5,24 +5,32 @@ import React from 'react'
 import { Image, ImageBackground, StyleSheet, Text, View } from 'react-native'
 
 const TabBarIcon = ({ focused, icon, text }: any) => {
-  if (focused) {
+  if (focused && text !== "Downloads") {
+    return (
+        <ImageBackground source={images.highlight}
+          className='flex flex-row w-full flex-1 min-w-[90px] min-h-12 mt-4 justify-center items-center rounded-full overflow-hidden'
+        >
+          <Image source={icon} className='size-5' tintColor='#151312' />
+        <Text className='text-primary text-white text-light-200 ml-1 font-medium'>{text}</Text>
+      </ImageBackground>
+    )
+  }else if(focused && text === "Downloads") {
     return (
       <ImageBackground source={images.highlight}
-        className='flex flex-row w-full flex-1 min-w-[112px] min-h-16 mt-4 justify-center items-center rounded-full overflow-hidden'
+          className='flex flex-row w-[15]  flex-1 min-w-[90px] min-h-12 mt-4 justify-center items-center rounded-full'
       >
         <Image source={icon} className='size-5' tintColor='#151312' />
-        <Text className='text-primary text-base ml-1 font-medium'>{text}</Text>
+        <Text className='text-primary text-white text-light-200 ml-1 font-medium'>{text}</Text>
       </ImageBackground>
     )
   }
-
-  return (
-    <View className='flex flex-row w-full flex-1 min-w-[112px] min-h-16 mt-4 justify-center items-center rounded-full overflow-hidden'>
-      <Image source={icon} className='size-5' tintColor='#fff' />
-      {/* <Text className='text-primary text-white text-light-200 ml-2 font-medium'>{text}</Text> */}
-    </View>
-  )
-}
+    return (
+      <View className='flex flex-row min-h-12 mt-4 justify-center items-center rounded-full overflow-hidden'>
+        <Image source={icon} className='size-5' tintColor='#fff' />
+        {/* <Text className='text-primary text-white text-light-200 ml-2 font-medium'>{text}</Text> */}
+      </View>
+    )
+  }
 
 const _layout = () => {
   return (
@@ -39,7 +47,7 @@ const _layout = () => {
           backgroundColor: '#0f0d23',
           borderRadius: 50,
           marginHorizontal: 20,
-          marginBottom: 36,
+          marginBottom: 60,
           height: 52,
           position: 'absolute',
           overflow: 'hidden',

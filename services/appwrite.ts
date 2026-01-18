@@ -5,15 +5,26 @@ const DATABASE_ID = process.env.EXPO_PUBLIC_APPWRITE_DATABASE_ID!;
 const COLLECTION_ID = process.env.EXPO_PUBLIC_APPWRITE_COLLECTION_ID!;
 const SAVES_COLLECTION_ID = process.env.EXPO_PUBLIC_APPWRITE_SAVES_ID!;
 
-const client = new Client()
-  .setEndpoint(process.env.EXPO_PUBLIC_APPWRITE_ENDPOINT!)
-  .setProject(process.env.EXPO_PUBLIC_APPWRITE_PROJECT_ID!)
+const endpoint = process.env.EXPO_PUBLIC_APPWRITE_ENDPOINT;
+const project = process.env.EXPO_PUBLIC_APPWRITE_PROJECT_ID;
+
+const client = new Client();
+
+if (endpoint && project) {
+  client.setEndpoint(endpoint).setProject(project);
+}
 
 const database = new Databases(client);
 const account = new Account(client);
 
 export const updateSearchCount = async (query: string, movie: Movie) => {
   try {
+    if (!DATABASE_ID || !COLLECTION_ID) {
+      console.error('Appwrite DATABASE_ID or COLLECTION_ID is missing');
+      return;
+    }
+    const user = await getCurrentUser();
+    if (!user) return;
     const res = await database.listDocuments(DATABASE_ID, COLLECTION_ID, [
       Query.equal('searchTerm', query)
     ])
@@ -31,7 +42,7 @@ export const updateSearchCount = async (query: string, movie: Movie) => {
         movie_id: movie.id,
         count: 1,
         title: movie.title,
-        poster_url: 'https://image.tmdb.org/t/p/w500' + movie.poster_path
+        poster_url: 'https://image.tmdb.org/t/p/w500' + movie.poster_path,
       })
     }
   } catch (error) {
@@ -42,6 +53,10 @@ export const updateSearchCount = async (query: string, movie: Movie) => {
 
 export const getTrendingMovies = async (): Promise<TrendingMovie[]> => {
   try {
+    if (!DATABASE_ID || !COLLECTION_ID) {
+      console.error('Appwrite DATABASE_ID or COLLECTION_ID is missing');
+      return [];
+    }
     const res = await database.listDocuments(DATABASE_ID, COLLECTION_ID, [
       Query.limit(5),
       Query.orderDesc('count')
@@ -107,8 +122,11 @@ export const getCurrentUser = async () => {
 
 export const saveMovie = async (movie: MovieDetails) => {
   try {
+    if (!DATABASE_ID || !SAVES_COLLECTION_ID) {
+      throw new Error('Appwrite configuration missing');
+    }
     const user = await getCurrentUser();
-    if (!user) throw new Error('User not authenticated');
+    if (!user) return;
 
     return await database.createDocument(DATABASE_ID, SAVES_COLLECTION_ID, ID.unique(), {
       userId: user.$id,
@@ -152,6 +170,7 @@ export const getSavedMovies = async () => {
 
 export const isMovieSaved = async (movieId: string) => {
   try {
+    if (!DATABASE_ID || !SAVES_COLLECTION_ID) return null;
     const user = await getCurrentUser();
     if (!user) return null;
 

@@ -1,3 +1,4 @@
+import VideoPlayer from '@/components/VideoPlayer';
 import { ActiveDownload, deleteDownload, DownloadedMovie, getDownloads, subscribeToDownloads } from '@/services/download';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -8,7 +9,9 @@ const DownloadsScreen = () => {
   const [downloads, setDownloads] = useState<DownloadedMovie[]>([]);
   const [activeDownloads, setActiveDownloads] = useState<ActiveDownload[]>([]);
   const [loading, setLoading] = useState(true);
+  const [playingVideo, setPlayingVideo] = useState<{ uri: string; title: string } | null>(null);
   const router = useRouter();
+  console.log(playingVideo);
 
   const fetchDownloads = () => {
     try {
@@ -97,9 +100,7 @@ const DownloadsScreen = () => {
           <TouchableOpacity
             className="bg-accent px-4 py-2 rounded-lg flex-row items-center"
             onPress={() => {
-              // Logic to play local video would go here
-              // For now we just alert
-              alert("Playing offline movie...");
+              setPlayingVideo({ uri: item.local_uri, title: item.title });
             }}
           >
             <Ionicons name="play" size={16} color="white" />
@@ -156,6 +157,14 @@ const DownloadsScreen = () => {
             contentContainerStyle={{ paddingBottom: 100 }}
           />
         </View>
+      )}
+
+      {playingVideo && (
+        <VideoPlayer
+          uri={playingVideo.uri}
+          title={playingVideo.title}
+          onClose={() => setPlayingVideo(null)}
+        />
       )}
     </View>
   );

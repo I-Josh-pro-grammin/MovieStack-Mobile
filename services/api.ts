@@ -56,6 +56,21 @@ export const fetchMovies = async ({query}: {query: string}) => {
     }
   }
 
+  export const fetchMovieVideos = async (movie_id: string) => {
+    const endpoint = `${TMDB_CONFIG.BASE_URL}/movie/${movie_id}/videos`;
+    try {
+      const response = await fetch(endpoint, {
+        method: 'GET',
+        headers: TMDB_CONFIG.headers
+      });
+      const data = await response.json();
+      return data.results; // Returns list of videos (trailers, teasers, etc.)
+    } catch (error) {
+      console.error('Error fetching videos:', error);
+      return [];
+    }
+  }
+
   // const url = 'https://api.themoviedb.org/3/discover/movie?include_adult=false&include_video=false&language=en-US&page=1&sort_by=popularity.desc';
   // const options = {
   //   method: 'GET',
